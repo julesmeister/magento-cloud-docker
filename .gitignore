@@ -1,11 +1,78 @@
+# Magento core directories
+/app/code/Magento/
+/app/design/adminhtml/Magento/
+/app/design/frontend/Magento/
+/app/etc/
+/app/i18n/
+/bin/
+/dev/
+/lib/
+/phpserver/
+/setup/
+/update/
+
+# Generated and vendor files
+/generated/
+/vendor/
+/pub/static/*
+!/pub/static/.htaccess
+/pub/media/*
+!/pub/media/.htaccess
+/var/*
+!/var/.htaccess
+
+# Composer files (keep composer.json but not lock)
+composer.lock
+
+# Sample data
+/sample-data/
+
+# Environment and config files
+.env.local
+auth.json
+/app/etc/env.php
+/app/etc/config.php
+
+# IDE and OS files
+.idea/
+.vscode/
 .DS_Store
-/.idea
-/vendor
-/composer.phar
-/composer.lock
-/auth.json
-/_workdir
-/_workdir_cache
-/venv
-/*.code-workspace
-.phpunit.result.cache
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# Log files
+*.log
+/var/log/
+/var/report/
+
+# Cache and session files
+/var/cache/
+/var/page_cache/
+/var/session/
+/var/tmp/
+
+# Testing
+/tmp/
+/tests/
+
+# Docker volumes (if mounted)
+/mysql_data/
+/redis_data/
+
+# Magento sample files
+*.sample
+!docker-compose.yml.sample
+!.env.sample
+
+# Build artifacts
+/node_modules/
+/grunt-config.json
+/package-lock.json
+
+# Keep our custom code
+!/app/code/Custom/
+
+# Claude AI
+.claude/
