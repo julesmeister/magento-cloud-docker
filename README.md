@@ -48,6 +48,20 @@ magento-ai-search/
    - **ChromaDB**: http://localhost:8000
    - **Mailhog**: http://localhost:8025
 
+3. **Load Sample Products** (Optional):
+   ```bash
+   python test-ai-search.py
+   ```
+
+4. **Test AI Search**:
+   - Visit your Magento store at http://localhost
+   - Look for the blue **AI Assistant** chat widget in the bottom-right corner
+   - Try queries like:
+     - "Show me smartphones"
+     - "I need a laptop for work"
+     - "Budget headphones under $400"
+     - "Best Apple products"
+
 ## Components Status
 
 ### ✅ Completed
@@ -65,13 +79,18 @@ magento-ai-search/
 - [x] Static content deployment and versioning fixes
 - [x] Customer account creation functionality
 - [x] Password requirements optimization
+- [x] **Frontend chatbot widget** - Beautiful floating chat interface
+- [x] **Product data indexing** - Vector database with semantic search
+- [x] **RAG search functionality** - Context-aware AI responses
+- [x] **Smart template responses** - Intelligent fallback when no API key
+- [x] **CORS enabled API** - Frontend-backend communication
+- [x] **Sample product dataset** - Ready-to-test product catalog
 
 ### 🚧 In Development
-- [ ] Frontend chatbot widget integration
-- [ ] Product data indexing to vector database
-- [ ] Search UI in Magento theme
 - [ ] Admin panel for AI search configuration
 - [ ] Search analytics and logging
+- [ ] Real-time Magento product sync
+- [ ] Advanced search filters
 
 ### 📋 Planned Features
 - [ ] Real-time product search suggestions
@@ -105,6 +124,43 @@ magento-ai-search/
 - **Vector DB**: ChromaDB latest
 - **Container Orchestration**: Docker Compose
 
+## Configuration
+
+### AI Search API Configuration
+
+The AI Search API uses environment variables defined in `.env`:
+
+```bash
+# AI Search Configuration
+OPENAI_API_KEY=your_openai_api_key_here     # Optional: For advanced AI responses
+GEMINI_API_KEY=your_gemini_api_key_here     # Optional: Alternative to OpenAI
+
+# Database Configuration
+MYSQL_ROOT_PASSWORD=magento2
+MYSQL_DATABASE=magento2
+MYSQL_USER=magento2
+MYSQL_PASSWORD=magento2
+
+# Magento Configuration
+MAGENTO_RUN_MODE=developer
+```
+
+### Optional: Enhanced AI Responses
+
+To get more sophisticated AI responses, add your API key to `.env`:
+
+1. **OpenAI Setup** (Recommended):
+   - Get API key from [OpenAI Platform](https://platform.openai.com/api-keys)
+   - Replace `your_openai_api_key_here` with your actual key
+   - Restart with: `docker compose restart ai-search-api`
+
+2. **Google Gemini Setup** (Alternative):
+   - Get API key from [Google AI Studio](https://aistudio.google.com/app/apikey)
+   - Replace `your_gemini_api_key_here` with your actual key
+   - Restart with: `docker compose restart ai-search-api`
+
+**Note**: The system works great without API keys using intelligent template responses!
+
 ## Troubleshooting
 
 ### Common Issues
@@ -125,14 +181,84 @@ magento-ai-search/
 - ✅ Password validation functional
 - ✅ JavaScript/CSS loading properly
 - ✅ Form submissions working correctly
+- ✅ AI Search chatbot widget functional
+- ✅ Vector search and RAG responses working
+
+### AI Search Issues
+
+**Chatbot not appearing:**
+- Clear browser cache (Ctrl+F5)
+- Verify services running: `docker compose ps`
+- Check API health: `http://localhost:5000/health`
+
+**Search not working:**
+- Ensure ChromaDB container is running
+- Load sample products: `python test-ai-search.py`
+- Check API logs: `docker logs magento-ai-search-ai-search-api-1`
+
+## Usage Examples
+
+### Sample Search Queries
+
+The AI Search chatbot understands natural language queries:
+
+**Product Search:**
+- "Show me smartphones under $1000"
+- "I need a laptop for work"
+- "Budget headphones with good sound quality"
+
+**Brand-specific:**
+- "What Apple products do you have?"
+- "Show me Samsung devices"
+
+**Category browsing:**
+- "Electronics on sale"
+- "Running shoes for men"
+
+**Conversational:**
+- "I'm looking for a gift for a tech lover"
+- "What's your best recommendation for music?"
+
+### API Endpoints
+
+**Health Check:**
+```bash
+GET http://localhost:5000/health
+```
+
+**Search Products:**
+```bash
+POST http://localhost:5000/search
+{
+  "query": "smartphone",
+  "limit": 5
+}
+```
+
+**Add Products:**
+```bash
+POST http://localhost:5000/add_products
+{
+  "products": [
+    {
+      "id": "123",
+      "name": "Product Name",
+      "description": "Product description",
+      "price": "99.99",
+      "category": "Electronics",
+      "brand": "Brand Name"
+    }
+  ]
+}
+```
 
 ## Next Steps
 
-1. **Frontend Integration**: Implement chatbot widget in Magento theme
-2. **Product Indexing**: Sync Magento catalog with ChromaDB
-3. **Search Enhancement**: Natural language processing for queries
-4. **Admin Configuration**: Management interface for AI search settings
-5. **Performance Optimization**: Caching and response time improvements
+1. **Real-time Sync**: Connect to actual Magento product catalog
+2. **Admin Configuration**: Management interface for AI search settings
+3. **Analytics**: Search query tracking and insights
+4. **Performance**: Caching and response optimization
+5. **Personalization**: User-specific recommendations
 
 ### Maintainers
 

@@ -5,6 +5,7 @@ Provides vector search and LLM integration for Magento AI Search module
 """
 
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 import os
 import json
 import requests
@@ -17,6 +18,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
+CORS(app)  # Enable CORS for all routes
 
 # Configuration
 CHROMA_URL = os.getenv('CHROMA_URL', 'http://chromadb:8000')
@@ -151,13 +153,17 @@ class AISearchService:
         """
         
         # Try OpenAI first, then Gemini as fallback
-        if OPENAI_API_KEY:
-            return self._call_openai(prompt)
-        elif GEMINI_API_KEY:
-            return self._call_gemini(prompt)
-        else:
-            # Fallback to simple template response
-            return self._generate_template_response(query, products)
+        if OPENAI_API_KEY and OPENAI_API_KEY != 'your_openai_api_key_here':
+            response = self._call_openai(prompt)
+            if response:
+                return response
+        elif GEMINI_API_KEY and GEMINI_API_KEY != 'your_gemini_api_key_here':
+            response = self._call_gemini(prompt)
+            if response:
+                return response
+        
+        # Fallback to enhanced template response
+        return self._generate_template_response(query, products)
     
     def _call_openai(self, prompt: str) -> str:
         """Call OpenAI API"""
@@ -185,11 +191,11 @@ class AISearchService:
                 return response.json()['choices'][0]['message']['content']
             else:
                 logger.error(f"OpenAI API error: {response.status_code}")
-                return self._generate_template_response("", [])
+                return None  # Signal to use template response
                 
         except Exception as e:
             logger.error(f"OpenAI call failed: {e}")
-            return self._generate_template_response("", [])
+            return None  # Signal to use template response
     
     def _call_gemini(self, prompt: str) -> str:
         """Call Google Gemini API"""
@@ -199,14 +205,40 @@ class AISearchService:
     def _generate_template_response(self, query: str, products: List[Dict[str, Any]]) -> str:
         """Generate a template response when AI is not available"""
         if not products:
-            return "I couldn't find any products matching your search. Please try different keywords."
+            return "I couldn't find any products matching your search. Could you try rephrasing or using different keywords?"
         
-        response = f"I found {len(products)} products for you:\n\n"
+        # Create a more intelligent template response
+        query_lower = query.lower()
+        
+        # Determine response style based on query
+        if any(word in query_lower for word in ['show', 'find', 'looking for', 'need', 'want']):
+            intro = f"I found {len(products)} great options for you:"
+        elif any(word in query_lower for word in ['best', 'top', 'recommend']):
+            intro = f"Here are my top {min(len(products), 3)} recommendations:"
+        elif any(word in query_lower for word in ['cheap', 'budget', 'affordable']):
+            intro = f"Here are some budget-friendly options I found:"
+        else:
+            intro = f"Based on your search for '{query}', here's what I found:"
+        
+        response = intro + "\n\n"
+        
+        # Format top 3 products with more detail
         for i, product in enumerate(products[:3], 1):
-            response += f"{i}. {product['name']} - ${product['price']}\n"
+            category = product.get('category', '').split(',')[0]  # Get first category
+            brand = product.get('brand', '')
+            
+            if brand and category:
+                response += f"{i}. {product['name']} by {brand}\n   ${product['price']} - {category}\n\n"
+            elif category:
+                response += f"{i}. {product['name']}\n   ${product['price']} - {category}\n\n"
+            else:
+                response += f"{i}. {product['name']} - ${product['price']}\n\n"
         
+        # Add helpful closing
         if len(products) > 3:
-            response += f"\n...and {len(products) - 3} more results."
+            response += f"Plus {len(products) - 3} more options available! "
+        
+        response += "Click on any product to learn more. Is there anything specific you'd like to know about these items?"
         
         return response
 

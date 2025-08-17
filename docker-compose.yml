@@ -85,7 +85,7 @@ services:
     volumes:
       - ./app/code/Custom/AiSearch:/app
     working_dir: /app
-    command: bash -c "pip install flask requests chromadb openai google-generativeai && echo 'Starting AI Search API...' && python ai_search_api.py"
+    command: bash -c "pip install flask flask-cors requests chromadb openai google-generativeai && echo 'Starting AI Search API...' && python ai_search_api.py"
     networks:
       - magento
 
