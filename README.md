@@ -196,6 +196,123 @@ To get more sophisticated AI responses, add your API key to `.env`:
 - Load sample products: `python test-ai-search.py`
 - Check API logs: `docker logs magento-ai-search-ai-search-api-1`
 
+### Magento Compilation Issues
+
+**ReflectionException: Class "Magento\Framework\App\Http\Interceptor" does not exist:**
+
+This error occurs when Magento's auto-generated interceptor classes are missing. To fix:
+
+1. **Run dependency injection compilation:**
+   ```bash
+   # Windows (use the full Docker path)
+   "C:\Program Files\Docker\Docker\resources\bin\docker.exe" exec magento-ai-search-fpm-1 php -d memory_limit=2G bin/magento setup:di:compile
+   
+   # Linux/Mac
+   docker exec magento-ai-search-fpm-1 php -d memory_limit=2G bin/magento setup:di:compile
+   ```
+
+2. **If compilation fails with memory errors, increase PHP memory limit:**
+   ```bash
+   docker exec magento-ai-search-fpm-1 php -d memory_limit=4G bin/magento setup:di:compile
+   ```
+
+3. **Run setup upgrade:**
+   ```bash
+   docker exec magento-ai-search-fpm-1 php bin/magento setup:upgrade
+   ```
+
+4. **Clear cache:**
+   ```bash
+   docker exec magento-ai-search-fpm-1 php bin/magento cache:clean
+   ```
+
+5. **Fix permissions if needed:**
+   ```bash
+   docker exec magento-ai-search-fpm-1 chown -R www-data:www-data /var/www/html/generated/
+   docker exec magento-ai-search-fpm-1 chown -R www-data:www-data /var/www/html/var/
+   ```
+
+**Note:** The compilation process can take several minutes and requires significant memory. The `-d memory_limit=2G` flag ensures PHP has enough memory to complete the code generation.
+
+### ❌ Attempted Solutions That Did NOT Work
+
+**Hours of troubleshooting attempts that failed to resolve the ReflectionException:**
+
+1. **Multiple DI Compilation Attempts** - ❌ Failed
+   ```bash
+   # All of these failed with memory errors or directory cleanup issues
+   docker exec magento-ai-search-fpm-1 php -d memory_limit=2G bin/magento setup:di:compile
+   docker exec magento-ai-search-fpm-1 php -d memory_limit=4G bin/magento setup:di:compile
+   docker exec magento-ai-search-fpm-1 php -d memory_limit=4G -d max_execution_time=0 bin/magento setup:di:compile
+   ```
+
+2. **Directory Cleanup and Regeneration** - ❌ Failed
+   ```bash
+   # These cleared directories but didn't solve the core issue
+   docker exec magento-ai-search-fpm-1 rm -rf /var/www/html/generated/*
+   docker exec magento-ai-search-fpm-1 rm -rf /var/www/html/var/cache/* /var/www/html/var/page_cache/*
+   docker exec magento-ai-search-fpm-1 rm -rf /var/www/html/var/generation/* /var/www/html/var/di/*
+   ```
+
+3. **Container Restart and Permissions** - ❌ Failed
+   ```bash
+   # Restarting containers and fixing permissions didn't resolve the issue
+   docker restart magento-ai-search-fpm-1
+   docker exec magento-ai-search-fpm-1 chown -R www-data:www-data /var/www/html/generated/
+   docker exec magento-ai-search-fpm-1 chown -R www-data:www-data /var/www/html/var/
+   ```
+
+4. **Module Disable/Enable Approach** - ❌ Failed
+   ```bash
+   # Temporarily disabling Custom_AiSearch module didn't fix the core issue
+   docker exec magento-ai-search-fpm-1 php bin/magento module:disable Custom_AiSearch
+   docker exec magento-ai-search-fpm-1 php bin/magento module:enable Custom_AiSearch
+   ```
+
+5. **Manual Directory Creation** - ❌ Failed
+   ```bash
+   # Creating directories manually didn't resolve missing proxy classes
+   docker exec magento-ai-search-fpm-1 mkdir -p /var/www/html/generated/code
+   docker exec magento-ai-search-fpm-1 mkdir -p /var/www/html/generated/code/Magento/Framework/App/Http/
+   ```
+
+6. **Setup Upgrade with High Memory** - ❌ Appeared to work but still shows errors
+   ```bash
+   # This completed successfully but the ReflectionException persists
+   docker exec magento-ai-search-fpm-1 php -d memory_limit=4G bin/magento setup:upgrade
+   ```
+
+**Current Status**: Despite running `setup:upgrade` successfully, the error persists:
+```
+Fatal error: Uncaught ReflectionException: Class "Magento\Framework\App\ResourceConnection\Proxy" does not exist
+```
+
+**Root Cause**: The issue appears to be a fundamental problem with Magento's interceptor/proxy generation system in developer mode. The classes that should be auto-generated are not being created properly, even after extensive troubleshooting.
+
+### Why Compilation is Slow
+
+**`setup:di:compile` performance issues:**
+
+The compilation command is slow because it regenerates the entire dependency injection configuration and code generation from scratch each time. In **developer mode**, this is usually unnecessary since Magento automatically regenerates code on-the-fly.
+
+**Solutions to avoid slow compilation:**
+
+1. **Avoid running compilation in developer mode** - Magento handles code generation automatically when files are accessed
+2. **Switch to production mode for faster performance** (has built-in caching):
+   ```bash
+   docker exec magento-ai-search-fpm-1 php bin/magento deploy:mode:set production
+   ```
+3. **Enable developer mode optimizations**:
+   ```bash
+   docker exec magento-ai-search-fpm-1 php bin/magento config:set dev/template/allow_symlink 1
+   ```
+
+**Why it's slow:**
+- No incremental compilation - regenerates everything
+- Processes all modules even if unchanged  
+- Developer mode has additional overhead
+- No built-in caching for generated code
+
 ## Usage Examples
 
 ### Sample Search Queries
